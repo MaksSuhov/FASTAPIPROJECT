@@ -7,6 +7,8 @@ from app.database.database import Base
 
 if TYPE_CHECKING:
     from app.models.rolemodel import Role
+if TYPE_CHECKING:
+    from app.models.chatmodel import Conversation
 
 class User(Base):
     __tablename__ = 'users'
@@ -20,4 +22,9 @@ class User(Base):
         secondary='user_roles',
         back_populates='users',
         lazy='selectin'
+    )
+    conversations: Mapped[list["Conversation"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )

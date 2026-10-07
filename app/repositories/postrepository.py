@@ -16,6 +16,9 @@ class PostRepository:
     async def get_by_id(self, post_id:int)->Post | None:
         return await self.db.get(Post, post_id)
 
+    async def get_by_user_id(self, user_id: int)->list[Post]:
+        return await self.db.scalars(select(Post).where(Post.author_id == user_id))
+
     async def save(self, payload:PostCreateSchema)->Post:
        return self.db.add(payload)
 

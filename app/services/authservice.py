@@ -41,7 +41,7 @@ class AuthService:
     async def login(self, cred:Credentials, response: Response)->User:
         existed_user = await self.auth_repository.get_by_username(cred.user_name)
         if existed_user is None or not await CredService.verify_password(cred.password, existed_user.hash_password):
-            raise HTTPException
+            raise HTTPException(status_code=404)
 
         access_token = CredService.create_access_token(existed_user.user_id)
         response.set_cookie(

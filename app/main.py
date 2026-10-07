@@ -13,6 +13,8 @@ from app.database.database import Base, engine, get_db
 from app.api.routers.authrouter import router as authrouter
 from app.api.routers.postrouter import router as postrouter
 from app.api.routers.adminrouter import router as adminrouter
+from app.api.routers.chatrouter import router as chatrouter
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -48,6 +50,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(router=authrouter)
 app.include_router(router=postrouter)
 app.include_router(router=adminrouter)
+app.include_router(router=chatrouter)
 
 app.add_middleware(
     CORSMiddleware,  # type: ignore
