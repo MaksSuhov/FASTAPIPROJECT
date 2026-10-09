@@ -10,6 +10,7 @@ class OpenAIChatGateway:
         messages: list[dict],
         tools: list[dict] | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
+        
         request = {
             "model": DEFAULT_MODEL,
             "messages": messages,

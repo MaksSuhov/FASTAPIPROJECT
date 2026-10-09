@@ -7,7 +7,9 @@ from app.api.dependences import get_chat_service
 from app.database.database import get_db
 from app.models.authmodel import User
 from app.models.chatmodel import Conversation, ChatMessage
+from app.models.postmodel import Post
 from app.schemas.ChatSchema import ChatRequest
+from app.schemas.postschemas import PostSchema, PostUpdateSchema
 from app.services.CredService import CredService
 from app.services.chatservice import ChatService
 
@@ -20,7 +22,6 @@ async def stream_chat(
     payload: ChatRequest,
     current_user: User = Depends(CredService.get_current_user),
     chat_service: ChatService =Depends(get_chat_service),
-    db: AsyncSession = Depends(get_db),
 ):
 
     async def event_stream():

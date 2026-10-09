@@ -21,7 +21,7 @@ class AuthService:
     async def register(self, cred:Credentials)->User:
         existed_user = await self.auth_repository.get_by_username(cred.user_name)
         if existed_user is not None:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         default_role = await self.role_repository.get_default_role()
 
@@ -41,7 +41,7 @@ class AuthService:
     async def login(self, cred:Credentials, response: Response)->User:
         existed_user = await self.auth_repository.get_by_username(cred.user_name)
         if existed_user is None or not await CredService.verify_password(cred.password, existed_user.hash_password):
-            raise HTTPException(status_code=404)
+            raise HTTPException(status_code=401)
 
         access_token = CredService.create_access_token(existed_user.user_id)
         response.set_cookie(

@@ -57,7 +57,7 @@ class ChatService:
         await self.chat_repository.commit()
 
         history = await self.chat_repository.get_recent_message(conversation.conversation_id)
-        messages = self.prompt_builder.build_llm_messages(history)
+        messages = self.prompt_builder.build_llm_messages(history, user_id=user_id)
 
         assistant_parts: list[str] = []
 
@@ -70,6 +70,20 @@ class ChatService:
 
                     mcp_tools = await mcp_session.list_tools()
                     openai_tools = convert_mcp_tools_to_openai(mcp_tools.tools)
+
+                    current_user_tools = {"mcp_create_post",'update_my_post', 'get_my_profile'}
+
+                    for tool in openai_tools:
+                        if tool["function"]["name"] not in current_user_tools:
+                            continue
+
+                        parameters = tool["function"]["parameters"]
+                        parameters["properties"].pop("user_id", None)
+                        parameters["required"] = [
+                            argument
+                            for argument in parameters.get("required", [])
+                            if argument != "user_id"
+                        ]
 
                     built_tool_calls = {}
 
@@ -101,7 +115,7 @@ class ChatService:
                             tool_args = json.loads(
                                 tool_data["arguments"]) if tool_data["arguments"] else {}
 
-                            if tool_name == "get_user_posts" and "user_id" in tool_args:
+                            if tool_name in current_user_tools:
                                 tool_args["user_id"] = user_id
 
                             mcp_result = await mcp_session.call_tool(tool_name, arguments=tool_args)
