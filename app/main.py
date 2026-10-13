@@ -60,27 +60,7 @@ app.add_middleware(
     allow_headers=["*"]  # type: ignore
 )
 
-@app.post('/{user_id}/make-admin')
-async def make_user_admin(user_id:int=Path(...,detail='айди юзера'),
-                          db:AsyncSession=Depends(get_db)):
-    user = await db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    admin_role = await db.scalar(
-        select(Role).where(
-            Role.role_name == 'ADMIN'
-        ))
-    if not admin_role:
-        raise HTTPException(status_code=500, detail="Роль ADMIN не инициализирована в БД")
-
-    if admin_role in user.roles:
-        return {"message": "Пользователь уже админ"}
-
-    user.roles.append(admin_role)
-    await db.commit()
-
-    return {'message': f'пользователь {user.user_name} теперь админ'}
 
 
 

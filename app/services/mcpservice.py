@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from app.database.database import AsyncSessionLocal
@@ -5,6 +6,7 @@ from app.repositories.authreposiory import AuthRepository
 from app.repositories.postrepository import PostRepository
 from app.schemas.postschemas import PostCreateSchema, PostUpdateSchema
 from app.services.postservice import PostService
+
 
 
 
@@ -26,6 +28,34 @@ class McpServise:
                 'created_at': user.created_at.isoformat()
                 if user.created_at
                   else None
+            }
+    async def get_posts(self, user_id: int)->dict:
+        async with self.session_factory() as db_session:
+            user = await AuthRepository(db_session).get_by_id(user_id=user_id)
+
+            if user is None:
+                return {'error': 'Пользователь не найден'}
+
+            try:
+                posts = await PostRepository(db_session).get_by_user_id(user_id)
+            except:
+                return {'user_id':user_id,
+                        'posts_count': 0,
+                        'posts': [],
+                        'error': 'Не удалось найти посты пользователя'
+                        }
+            formatted_posts = [
+                {
+                'post_id': post.post_id,
+                'title': post.title,
+                'created_at': post.created_at
+                }
+                for post in posts
+            ]   
+            return {
+                'user_id': user_id,
+                'posts_count': len(formatted_posts),
+                'posts':formatted_posts
             }
 
     async def create_post(self, user_id:int, title:str, content:str)->dict:    
@@ -74,7 +104,21 @@ class McpServise:
 
             return {
                 'post_id': updated.post_id,
-                'tatle': updated.title,
+                'title': updated.title,
                 'content': updated.content,
                 'author_id': updated.author_id
             }
+
+    async def delete_post(self, user_id:int,post_id:int)->dict:
+        async with self.session_factory() as db_session:
+            user = await AuthRepository(db_session).get_by_id(user_id)
+                
+            if user is None:
+                return {'error': 'пользователь не найден'}
+                            
+            try:
+                await PostService(db_session, user).delete(post_id=post_id)
+            except HTTPException as exc:
+                return {'error': exc.detail or 'недостаточно прав для удаления'}
+
+            return {"post_id": post_id, "status": "deleted"}

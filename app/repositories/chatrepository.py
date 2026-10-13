@@ -38,6 +38,13 @@ class ChatRepository:
             ChatMessage.message_id.desc()).limit(20)
         return list(reversed((await self.db.scalars(stmt)).all()))
 
+    async def get_all(self, user_id:int)->list[Conversation]:
+        stmt = select(Conversation).where(Conversation.user_id == user_id)
+        return list((await self.db.scalars(stmt)).all())
+
+    async def delete(self, conversation: Conversation) -> None:
+        await self.db.delete(conversation)
+
     async def commit(self) -> None:
         await self.db.commit()
 

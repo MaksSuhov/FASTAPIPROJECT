@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Path
 
 from app.api.dependences import get_admin_service
+from app.models.authmodel import User
 from app.models.postmodel import Post
 from app.schemas.postschemas import PostUpdateSchema, PostSchema
 from app.services.adminservice import AdminService
@@ -24,3 +25,9 @@ async def delete_post(
         admin_service: AdminService = Depends(get_admin_service)
         )->None:
     await admin_service.admin_delete(post_id)
+
+@router.post('/{user_id}/make_admin')
+async def make_user_admin(user_id: int = Path(...,description='айди пользователя'),
+                          admin_service: AdminService = Depends(get_admin_service))->dict:
+    return await admin_service.make_admin(user_id)
+    

@@ -1,8 +1,10 @@
 from fastapi import Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.models.authmodel import User
+from app.models.rolemodel import Role
 from app.services.CredService import CredService
 
 
@@ -25,3 +27,4 @@ class RoleChecker:
             )
 
         return current_user
+

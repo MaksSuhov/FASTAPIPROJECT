@@ -1,11 +1,16 @@
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.models.authmodel import User
 from app.models.postmodel import Post
+from app.models.rolemodel import Role
+from app.repositories.authreposiory import AuthRepository
 from app.repositories.postrepository import PostRepository
+from app.repositories.roleRepository import RoleRepository
 from app.schemas.postschemas import PostUpdateSchema
+from app.services.roleChecker import RoleChecker
 
 
 
@@ -20,7 +25,7 @@ class AdminService:
             post_id: int,
             payload: PostUpdateSchema,
             ) -> Post:
-        db_post = await self.db.get(Post, post_id)
+        db_post = await self.post_repository.get_by_id(post_id)
         if db_post is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пост не найден")
 
@@ -40,5 +45,26 @@ class AdminService:
 
         await self.post_repository.delete(post_id)
         await self.db.commit()
+
+    async def make_admin(self, user_id: int):
+
+        user = await AuthRepository(self.db).get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        
+        admin_role = await RoleRepository(self.db).get_by_name('ADMIN')
+        
+
+        if not admin_role:
+            raise HTTPException(status_code=500, detail="Роль ADMIN не инициализирована в БД")
+    
+        if any(role.role_name == 'ADMIN' for role in user.roles):
+            return {"message": "Пользователь уже админ"}
+    
+        user.roles.append(admin_role)
+        await self.db.commit()
+    
+        return {'message': f'пользователь {user.user_name} теперь админ'}
+
 
 

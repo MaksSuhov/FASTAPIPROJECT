@@ -8,7 +8,6 @@ from app.repositories.authreposiory import AuthRepository
 class RoleRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.auth_repository = AuthRepository
 
     async def get_by_name(self, name:str)-> Role | None:
         result = await self.db.execute(

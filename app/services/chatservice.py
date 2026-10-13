@@ -1,8 +1,8 @@
 import asyncio
 import json
-import token
 from typing import AsyncIterator
 
+from fastapi import HTTPException
 from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,9 +11,11 @@ from mcp import ClientSession
 
 from app.config.config import DEFAULT_MODEL
 from app.mcp_client import convert_mcp_tools_to_openai, openai_client
+from app.models.chatmodel import Conversation
 from app.repositories.chatrepository import ChatRepository
 from app.services.OpenAIChatGateway import OpenAIChatGateway
 from app.services.PromptBuilder import PromptBuilder
+from app.mcp_token import create_mcp_token
 
 
 @dataclass
@@ -64,26 +66,13 @@ class ChatService:
         if is_new:
             yield ChatEvent('conversation', {'conversation_id': conversation.conversation_id})
         try:
-            async with sse_client("http://127.0.0.1:8001/sse") as (read, write):
+            mcp_token = create_mcp_token(user_id)
+            async with sse_client("http://127.0.0.1:8001/sse", headers={'Authorization': f"Bearer {mcp_token}"}) as (read, write):
                 async with ClientSession(read, write) as mcp_session:
                     await mcp_session.initialize()
 
                     mcp_tools = await mcp_session.list_tools()
                     openai_tools = convert_mcp_tools_to_openai(mcp_tools.tools)
-
-                    current_user_tools = {"mcp_create_post",'update_my_post', 'get_my_profile'}
-
-                    for tool in openai_tools:
-                        if tool["function"]["name"] not in current_user_tools:
-                            continue
-
-                        parameters = tool["function"]["parameters"]
-                        parameters["properties"].pop("user_id", None)
-                        parameters["required"] = [
-                            argument
-                            for argument in parameters.get("required", [])
-                            if argument != "user_id"
-                        ]
 
                     built_tool_calls = {}
 
@@ -114,9 +103,6 @@ class ChatService:
                             tool_name = tool_data["name"]
                             tool_args = json.loads(
                                 tool_data["arguments"]) if tool_data["arguments"] else {}
-
-                            if tool_name in current_user_tools:
-                                tool_args["user_id"] = user_id
 
                             mcp_result = await mcp_session.call_tool(tool_name, arguments=tool_args)
 
@@ -168,6 +154,13 @@ class ChatService:
         except SQLAlchemyError:
             await self.chat_repository.rollback()
             yield ChatEvent("error", {"message": "Не удалось сохранить ответ."})
+
+    async def delete_conversation(self, conversation_id: int, user_id:int)->dict:
+        conversation = await self.chat_repository.get_owned_conversation(conversation_id=conversation_id, user_id=user_id)
+        if conversation is None:
+            raise HTTPException(status_code=404, detail="Диалог не найден")
+        await self.chat_repository.delete(conversation=conversation)
+        await self.chat_repository.commit()
 
     def sse(self, event: str, data: dict) -> str:
         return (
