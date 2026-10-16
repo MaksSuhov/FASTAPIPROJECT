@@ -50,3 +50,16 @@ class CredService:
         if user is None:
             raise credentials_exception
         return user
+
+    async def get_optional_user(
+            access_token: str | None = Cookie(default=None),
+            db: AsyncSession = Depends(get_db)
+    ) -> User | None:
+        if access_token is None:
+            return None
+        try:
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = int(payload['sub'])
+        except Exception:
+            return None
+        return await db.get(User, user_id)

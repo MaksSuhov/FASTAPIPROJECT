@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.likesmodel import Like
 from app.models.postmodel import Post
 from app.schemas.postschemas import PostCreateSchema
 
@@ -9,9 +10,24 @@ class PostRepository:
     def __init__(self, db: AsyncSession)->None:
         self.db = db
 
-    async def get_all(self)->list[Post]:
-        all_post = await self.db.scalars(select(Post))
-        return all_post.all()
+    async def get_all(self, limit: int = 20, offset: int = 0, viewer_id: int | None = None)->list[Post]:
+        viewer_id = viewer_id if viewer_id is not None else 0
+        stmt = (select(Post, func.count(Like.user_id).label('likes_count'),func.count(case((Like.user_id == viewer_id, 1))).label('liked_by_me'))
+                .outerjoin(Like, Like.post_id == Post.post_id)
+                .group_by(Post.post_id)
+                .order_by(Post.created_at.desc())
+                .limit(limit)
+                .offset(offset))
+        rows = (await self.db.execute(stmt)).all()
+
+        posts = []
+        for post, likes_count, liked_by_me in rows:
+            post.likes_count = likes_count
+            post.liked_by_me = bool(liked_by_me)
+            posts.append(post)
+        return list(posts)
+
+        
 
     async def get_by_id(self, post_id:int)->Post | None:
         return await self.db.get(Post, post_id)

@@ -8,7 +8,9 @@ from app.services.CredService import CredService
 from app.services.OpenAIChatGateway import OpenAIChatGateway
 from app.services.PromptBuilder import PromptBuilder
 from app.services.adminservice import AdminService
+from app.services.admmcpservice import AdminMCPService
 from app.services.authservice import AuthService
+from app.services.likeservice import LikeService
 from app.services.postservice import PostService
 from app.services.roleChecker import RoleChecker
 from app.services.chatservice import ChatService
@@ -32,6 +34,10 @@ async def get_chat_service(prompt_builder: PromptBuilder = Depends(PromptBuilder
     return ChatService(chat_repository=ChatRepository(db),
                        llm=llm,
                        prompt_builder=prompt_builder)
+
+async def get_like_service(db: AsyncSession = Depends(get_db),
+                           current_user: User = Depends(CredService.get_current_user)):
+    return LikeService(db, current_user)
 
 
 

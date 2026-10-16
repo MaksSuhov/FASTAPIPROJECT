@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from app.database.database import AsyncSessionLocal
@@ -11,8 +12,7 @@ from app.services.postservice import PostService
 
 
 class McpServise:
-    def __init__(self,session_factory: async_sessionmaker[AsyncSession],
-                 )->None:
+    def __init__(self,session_factory: async_sessionmaker[AsyncSession])->None:
         self.session_factory = session_factory
 
     async def get_profile(self, user_id:int)->dict:
@@ -66,7 +66,10 @@ class McpServise:
             if user is None:
                 return {'error': 'пользователь не найден'}
 
-            post = await PostService(db_session, user).create_post(PostCreateSchema(title=title, content=content))
+            try:
+                post = await PostService(db_session, user).create_post(PostCreateSchema(title=title, content=content))
+            except ValidationError as exc:
+                return {'error': 'заголовок не длиннее 100 символов, текст — не длиннее 4000'}
 
             return {
                 'post_id': post.post_id,

@@ -19,10 +19,7 @@ class PostService:
     async def get_all(self)->list[Post]:
         return await self.post_repository.get_all()
 
-    async def create_post(
-            self,
-            payload: PostCreateSchema
-            )-> Post:
+    async def create_post( self, payload: PostCreateSchema )-> Post:
 
         new_post = Post(
             title=payload.title,

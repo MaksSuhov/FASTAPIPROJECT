@@ -15,6 +15,7 @@ class OpenAIChatGateway:
             "model": DEFAULT_MODEL,
             "messages": messages,
             "stream": True,
+            "max_tokens": 800,
             "extra_body": {"reasoning": {"enabled": False}},
         }
 

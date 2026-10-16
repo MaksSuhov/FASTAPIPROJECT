@@ -10,7 +10,6 @@ from app.repositories.authreposiory import AuthRepository
 from app.repositories.postrepository import PostRepository
 from app.repositories.roleRepository import RoleRepository
 from app.schemas.postschemas import PostUpdateSchema
-from app.services.roleChecker import RoleChecker
 
 
 
@@ -19,6 +18,10 @@ class AdminService:
         self.db = db
         self.current_user = current_user
         self.post_repository = PostRepository(db)
+        self.auth_repository = AuthRepository(db)
+
+    async def get_all_for_admin(self)->list[User]:
+        return await self.auth_repository.get_all_users()
 
     async def admin_update(
             self,

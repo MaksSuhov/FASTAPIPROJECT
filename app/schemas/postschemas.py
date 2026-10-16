@@ -6,6 +6,8 @@ class PostSchema(BaseModel):
     title: str
     content: str
     author_id: int
+    likes_count: int = 0
+    liked_by_me: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

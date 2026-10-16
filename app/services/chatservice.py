@@ -41,7 +41,7 @@ class ChatService:
         self.llm = llm
         self.prompt_builder = prompt_builder
 
-    async def stream_reply(self, conversation_id: int | None, payload: str, user_id: int) -> AsyncIterator[ChatEvent]:
+    async def stream_reply(self, conversation_id: int | None, payload: str, user_id: int, roles: list[str]) -> AsyncIterator[ChatEvent]:
         is_new = conversation_id is None
 
         if is_new:
@@ -59,14 +59,14 @@ class ChatService:
         await self.chat_repository.commit()
 
         history = await self.chat_repository.get_recent_message(conversation.conversation_id)
-        messages = self.prompt_builder.build_llm_messages(history, user_id=user_id)
+        messages = self.prompt_builder.build_llm_messages(history, user_id=user_id, user_roles=roles)
 
         assistant_parts: list[str] = []
 
         if is_new:
             yield ChatEvent('conversation', {'conversation_id': conversation.conversation_id})
         try:
-            mcp_token = create_mcp_token(user_id)
+            mcp_token = create_mcp_token(user_id, roles)
             async with sse_client("http://127.0.0.1:8001/sse", headers={'Authorization': f"Bearer {mcp_token}"}) as (read, write):
                 async with ClientSession(read, write) as mcp_session:
                     await mcp_session.initialize()
@@ -154,6 +154,9 @@ class ChatService:
         except SQLAlchemyError:
             await self.chat_repository.rollback()
             yield ChatEvent("error", {"message": "Не удалось сохранить ответ."})
+            
+        except Exception:
+            yield ChatEvent("error", {"message": "Не удалось получить ответ модели."})
 
     async def delete_conversation(self, conversation_id: int, user_id:int)->dict:
         conversation = await self.chat_repository.get_owned_conversation(conversation_id=conversation_id, user_id=user_id)

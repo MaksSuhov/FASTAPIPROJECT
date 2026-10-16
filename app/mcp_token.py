@@ -8,12 +8,13 @@ MCP_ALGORITHM = 'HS256'
 MCP_AUDIENCE = 'mcp'
 MCP_TOKEN_EXPIRE_MINUTES = 5
 
-def create_mcp_token(user_id:id)->str:
+def create_mcp_token(user_id:id, roles: list[str])->str:
     now = datetime.now(timezone.utc)
 
     payload = {
         'sub': str(user_id),
         'aud': MCP_AUDIENCE,
+        'roles': roles,
         'iat': now,
         'exp': now + timedelta(minutes=MCP_TOKEN_EXPIRE_MINUTES)
     }

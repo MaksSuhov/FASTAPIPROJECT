@@ -9,6 +9,10 @@ class AuthRepository:
     def __init__(self, db: AsyncSession)->None:
         self.db = db
 
+    async def get_all_users(self)->list[User]:
+        all_users = await self.db.scalars(select(User))
+        return list(all_users.all())
+    
     async def get_by_username(self, user_name: str)->User | None:
         return await self.db.scalar(
             select(User).where(User.user_name == user_name).options(selectinload(User.roles)))

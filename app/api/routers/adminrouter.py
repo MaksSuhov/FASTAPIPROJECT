@@ -4,11 +4,16 @@ from app.api.dependences import get_admin_service
 from app.models.authmodel import User
 from app.models.postmodel import Post
 from app.schemas.postschemas import PostUpdateSchema, PostSchema
+from app.schemas.userschemas import UserSchema
 from app.services.adminservice import AdminService
+
 
 
 router = APIRouter()
 
+@router.get('/admin/users', response_model=list[UserSchema])
+async def get_user_for_admin(admin_service: AdminService = Depends(get_admin_service))->list[User]:
+    return await admin_service.get_all_users()
 
 @router.patch('/admin/posts/{post_id}', response_model=PostSchema)
 async def update_post(

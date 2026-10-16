@@ -28,6 +28,7 @@ async def stream_chat(
     async def event_stream():
         async for event in chat_service.stream_reply(conversation_id=payload.conversation_id,
                                                      user_id=current_user.user_id,
+                                                     roles=[r.role_name for r in current_user.roles],
                                                      payload=payload.content):
             yield chat_service.sse(event.name, event.data)
 
