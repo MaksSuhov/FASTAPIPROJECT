@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Query, status, Depends, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependences import get_like_service, get_post_service
+from app.api.dependences import get_comment_service, get_like_service, get_post_service
 from app.database.database import get_db
 from app.models.authmodel import User
+from app.models.commentmodel import Comment
 from app.models.likesmodel import Like
 from app.models.postmodel import Post
 from app.repositories.postrepository import PostRepository
+from app.schemas.commentschema import CommentCreateSchema, CommentSchema
 from app.schemas.postschemas import PostSchema, PostCreateSchema, PostUpdateSchema
 from app.services.CredService import CredService
+from app.services.commentservice import CommentService
 from app.services.likeservice import LikeService
 from app.services.postservice import PostService
 from app.schemas.LikeSchema import LikeCreateSchema, LikeStateSchema
@@ -56,3 +59,23 @@ async def add_post_like(post_id: int = Path(..., detail='айди поста'),
 async def delete_post_like(post_id: int = Path(..., detail='айди поста'),
                            like_service: LikeService = Depends(get_like_service)) -> LikeStateSchema:
     return await like_service.delete_like(post_id)
+
+@router.get('/posts/{post_id}/comments', response_model=list[CommentSchema])
+async def get_all_comments_in_post(post_id: int = Path(..., detail='айди поста'),
+                                   limit: int = Query(20, ge=1, le=100),
+                                   offset: int = Query(0, ge=0),
+                                  comment_service: CommentService = Depends(get_comment_service)) -> list[Comment]:
+    return await comment_service.get_comments(post_id, limit, offset)
+
+@router.post('/posts/{post_id}/comments', response_model=CommentSchema)
+async def create_comment(payload: CommentCreateSchema,
+                         post_id:int = Path(..., detail = 'айди поста'),
+                         comment_service: CommentService = Depends(get_comment_service))->Comment:
+    return await comment_service.add_comment(post_id, payload)
+
+@router.delete('/posts/{post_id}/comments/{comment_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_comment(post_id: int = Path(..., detail = 'айди поста'),
+                         comment_id: int = Path(..., detail = 'айди комментария'),
+                         comment_service: CommentService = Depends(get_comment_service))->None:
+    await comment_service.delete_comment(post_id, comment_id)
+    

@@ -2,12 +2,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PostSchema(BaseModel):
+    author_username: str | None = None
     post_id: int
     title: str
     content: str
     author_id: int
     likes_count: int = 0
     liked_by_me: bool = False
+    comments_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 

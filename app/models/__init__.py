@@ -2,6 +2,7 @@ from app.models.authmodel import User
 from app.models.rolemodel import Role, UserRole
 from app.models.chatmodel import Conversation, ChatMessage
 from app.models.postmodel import Post
+from app.models.likesmodel import Like
 
 __all__ = [
     "User",
@@ -10,4 +11,6 @@ __all__ = [
     "Conversation",
     "ChatMessage",
     "Post",
+    "Like",
+    "Comment"
 ]

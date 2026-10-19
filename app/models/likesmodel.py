@@ -1,11 +1,8 @@
-from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.database import Base
-from app.models.postmodel import Post
-
 
 
 class Like(Base):
